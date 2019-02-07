@@ -8,9 +8,33 @@
 
 require 'net/https'
 require 'json'
+require 'optparse'
+require 'pp'
 
-GISTS_FILE = 'gists.json'.freeze
 GITHUB_API_STEM = 'https://api.github.com'.freeze
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: lists_gists.rb [options]"
+
+  opts.on("-h", "--help", "Show this help message") do
+    puts opts
+  end
+
+  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+    options[:verbose] = v
+  end
+
+  options[:username] = 'chrisjomaron'
+  opts.on("-u", "--username", "specify username to pollfor public gists") do |u|
+    options[:username] = u
+  end
+
+end.parse!
+
+pp options if options[:verbose]
+pp ARGV if options[:verbose]
+GISTS_FILE = "#{options[:username]}.json".freeze
 
 def fetch(url)
   uri = URI(url)
@@ -18,7 +42,7 @@ def fetch(url)
 
   case response
   when Net::HTTPSuccess then
-    puts 'Response class = ' + response.class.name
+    puts 'Response class = ' + response.class.name 
     response.body
   else
     response.value
@@ -31,8 +55,7 @@ begin
   old.each do |gist|
     old_gists << { 'id' => gist['id'], 'updated_at' => gist['updated_at'] }
   end
-  puts 'Read in OLD gists:'
-  puts old_gists
+  puts "Read in OLD gists:\n", old_gists if options[:verbose]
 rescue Errno::ENOENT
   puts "#{GISTS_FILE} not found. No gists seen before?"
 end
@@ -44,14 +67,13 @@ current_gists = []
 json_payload.each do |gist|
   current_gists << { 'id' => gist['id'], 'updated_at' => gist['updated_at'] }
 end
-puts 'Found CURRENT gists:'
-puts current_gists
+puts "Found CURRENT gists:\n", current_gists if options[:verbose]
 
-puts 'difference between lists:'
+puts 'calculating difference between lists:' if options[:verbose]
 new_gists = []
 current_gists.each do |gist|
   if old_gists.include? gist
-    puts "discarded seen gist #{gist['id']}"
+    puts "discarded known gist #{gist['id']}" if options[:verbose]
   else
     puts "found NEW gist #{gist['id']}"
     new_gists << gist
