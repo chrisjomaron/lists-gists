@@ -8,33 +8,45 @@
 
 require 'net/https'
 require 'json'
-require 'optparse'
+require 'getoptlong'
 require 'pp'
 
 GITHUB_API_STEM = 'https://api.github.com'.freeze
 
-options = {}
-OptionParser.new do |opts|
-  opts.banner = "Usage: lists_gists.rb [options]"
+opts = GetoptLong.new(
+  ['--help', '-h', GetoptLong::NO_ARGUMENT],
+  ['--verbose', '-v', GetoptLong::NO_ARGUMENT],
+  ['--username', '-u', GetoptLong::REQUIRED_ARGUMENT]
+)
+# set a global so this can be accesssed inside the fetch method
+@verbose = false
+username = 'defunkt'
 
-  opts.on("-h", "--help", "Show this help message") do
-    puts opts
+opts.each do |opt, arg|
+  case opt
+  when '--help'
+    puts <<-END_HELP
+  lists-gists [OPTIONS]
+
+  -h, --help:
+     show help
+
+  --verbose, -v:
+     show debug output
+
+  --username [name]:
+     username to  poll for public gists
+END_HELP
+  when '--verbose'
+    @verbose = true
+  when '--username'
+    username = arg
   end
+end
 
-  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
-    options[:verbose] = v
-  end
+puts "Hello #{username}" if username
 
-  options[:username] = 'chrisjomaron'
-  opts.on("-u", "--username", "specify username to pollfor public gists") do |u|
-    options[:username] = u
-  end
-
-end.parse!
-
-pp options if options[:verbose]
-pp ARGV if options[:verbose]
-GISTS_FILE = "#{options[:username]}.json".freeze
+GISTS_FILE = "#{username}.json".freeze
 
 def fetch(url)
   uri = URI(url)
@@ -42,10 +54,10 @@ def fetch(url)
 
   case response
   when Net::HTTPSuccess then
-    puts 'Response class = ' + response.class.name 
+    puts "Response class = #{response.class.name}" if @verbose
     response.body
   else
-    response.value
+    "Error code: #{response.value}"
   end
 end
 
@@ -55,29 +67,32 @@ begin
   old.each do |gist|
     old_gists << { 'id' => gist['id'], 'updated_at' => gist['updated_at'] }
   end
-  puts "Read in OLD gists:\n", old_gists if options[:verbose]
+  puts "Read in OLD gists:\n", old_gists if @verbose
 rescue Errno::ENOENT
   puts "#{GISTS_FILE} not found. No gists seen before?"
 end
 
-json_payload = JSON.parse(fetch(GITHUB_API_STEM + '/users/chrisjomaron/gists'))
-# puts current_json_payload
+gists_url = "#{GITHUB_API_STEM}/users/#{username}/gists"
+json_payload = JSON.parse(fetch(gists_url))
+puts json_payload if @verbose
 
 current_gists = []
 json_payload.each do |gist|
   current_gists << { 'id' => gist['id'], 'updated_at' => gist['updated_at'] }
 end
-puts "Found CURRENT gists:\n", current_gists if options[:verbose]
+puts "Found CURRENT gists:\n", current_gists if @verbose
 
-puts 'calculating difference between lists:' if options[:verbose]
+
+puts 'calculating difference between lists:' if @verbose
 new_gists = []
 current_gists.each do |gist|
   if old_gists.include? gist
-    puts "discarded known gist #{gist['id']}" if options[:verbose]
+    puts "discarded known gist #{gist['id']}" if @verbose
   else
     puts "found NEW gist #{gist['id']}"
     new_gists << gist
   end
 end
+puts "Sorry, no new gists from #{username}" if new_gists.empty?
 
 File.open(GISTS_FILE, 'w') { |f| f.write(JSON.generate(current_gists)) }
