@@ -3,6 +3,7 @@
 # Simple; uses no extra gems
 # Treat updated gists as 'new'
 # TODO: tests
+# spec doesn't mention deleted gists, so am ignoring. 
 
 require 'net/https'
 require 'json'
@@ -34,12 +35,14 @@ OptionParser.new do |opts|
 
 end.parse!
 
+# set up variables
 @verbose = options[:verbose]
 username = options[:username].freeze
+previous_gists, current_gists, new_gists = [], [], []
 
 pp "Options: #{options}" if @verbose
 
-# convenience method to return payload from GET request
+# Convenience method to return payload from GET request
 def fetch_payload(url)
   puts "Connecting to #{url}..." if @verbose
   uri = URI(url)
@@ -56,33 +59,35 @@ def fetch_payload(url)
   end
 end
 
-# Attempt to populate an array of old gists, read from the user's state file
+# Receives JSON and returns array of gist hashes (gist ids and timestamps)
+def json_to_array(json_payload)
+  array = []
+  json_payload.each do |line|
+    array << { 'id' => line['id'], 'updated_at' => line['updated_at'] }
+  end
+  array
+end
+
+# Attempt to populate an array of previous gists, read from the user's state file
 GISTS_FILE = "#{username}.json".freeze
-old_gists = []
 begin
   old = JSON.parse(File.read(GISTS_FILE))
-  old.each do |gist|
-    old_gists << { 'id' => gist['id'], 'updated_at' => gist['updated_at'] }
-  end
-  puts "Read in previously seen gists from file '#{GISTS_FILE}':\n", old_gists if @verbose
+  previous_gists = json_to_array(old)
+  puts "Read in previously seen gists from file '#{GISTS_FILE}':\n", previous_gists if @verbose
 rescue Errno::ENOENT
-  puts "File #{GISTS_FILE} not found. No gists seen before?"
+  puts "File '#{GISTS_FILE}' not found. No gists seen before?"
 end
 
 # Now fetch current gists from GitHub API
 gists_url = "#{GITHUB_API_STEM}/users/#{username}/gists"
 json_payload = JSON.parse(fetch_payload(gists_url))
-current_gists = []
-json_payload.each do |gist|
-  current_gists << { 'id' => gist['id'], 'updated_at' => gist['updated_at'] }
-end
+current_gists = json_to_array(json_payload)
 puts "Parsed CURRENT gists from API:\n", current_gists if @verbose
 
 # diff the two, to find original or updated gists
 puts 'Calculating difference between old and new:' if @verbose
-new_gists = []
 current_gists.each do |gist|
-  if old_gists.include? gist
+  if previous_gists.include? gist
     puts "Discarded already known gist #{gist['id']}" if @verbose
   else
     puts "Found NEW gist #{gist['id']}"
@@ -91,5 +96,5 @@ current_gists.each do |gist|
 end
 puts "Sorry, no new gists from #{username}" if new_gists.empty?
 
-# Write all gists back to the user's state file
+# Write all current gists back to the user's state file
 File.open(GISTS_FILE, 'w') { |f| f.write(JSON.generate(current_gists)) }
