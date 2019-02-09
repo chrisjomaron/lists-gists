@@ -1,9 +1,8 @@
 #!/usr/bin/env ruby
 
 # Simple; uses no extra gems
-# Treat updated gists as 'new'
-# TODO: tests
-# spec doesn't mention deleted gists, so am ignoring. 
+# Treat updated and deleted gists as 'new' for notification purposes.
+# TODO: automate some tests
 
 require 'net/https'
 require 'json'
@@ -73,7 +72,7 @@ GISTS_FILE = "#{username}.json".freeze
 begin
   old = JSON.parse(File.read(GISTS_FILE))
   previous_gists = json_to_array(old)
-  puts "Read in previously seen gists from file '#{GISTS_FILE}':\n", previous_gists if @verbose
+  puts "Read in previously seen gists from file '#{GISTS_FILE}':", previous_gists if @verbose
 rescue Errno::ENOENT
   puts "File '#{GISTS_FILE}' not found. No gists seen before?"
 end
@@ -82,19 +81,19 @@ end
 gists_url = "#{GITHUB_API_STEM}/users/#{username}/gists"
 json_payload = JSON.parse(fetch_payload(gists_url))
 current_gists = json_to_array(json_payload)
-puts "Parsed CURRENT gists from API:\n", current_gists if @verbose
+puts "Parsed CURRENT gists from API:", current_gists if @verbose
 
-# diff the two, to find original or updated gists
-puts 'Calculating difference between old and new:' if @verbose
-current_gists.each do |gist|
-  if previous_gists.include? gist
-    puts "Discarded already known gist #{gist['id']}" if @verbose
-  else
-    puts "Found NEW gist #{gist['id']}"
-    new_gists << gist
-  end
+puts 'Calculating difference between previous and current:' if @verbose
+new_gists = current_gists - previous_gists
+deleted_gists = previous_gists - current_gists
+
+if new_gists.empty?
+  puts "Sorry, no new gists for #{username}" 
+else
+  puts 'Found new gists:', new_gists
 end
-puts "Sorry, no new gists from #{username}" if new_gists.empty?
+
+puts 'Detected a deleted gist:', deleted_gists unless deleted_gists.empty?
 
 # Write all current gists back to the user's state file
 File.open(GISTS_FILE, 'w') { |f| f.write(JSON.generate(current_gists)) }
