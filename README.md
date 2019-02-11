@@ -55,7 +55,9 @@
 
 ## Change history
 
-  v0.1.3 - Tested with all rubies >= 2.0. Added frozen frozen_string_literal directive
+  v0.1.4 - added TODOs
+
+  v0.1.3 - tested with all rubies >= 2.0. Added frozen frozen_string_literal directive
 
   v0.1.2 - use full gist URL instead of just hash. Address rubocop violations.
 
