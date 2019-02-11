@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+# frozen_string_literal: true
+
 # Simple; uses no extra gems
 # Treat updated and deleted gists as 'new' for notification purposes.
 # TODO: automate some tests
