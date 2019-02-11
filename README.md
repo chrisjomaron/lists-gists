@@ -1,6 +1,6 @@
 # lists-gists
 
-Overview:
+## Overview:
 
   This is a Ruby script to find public GitHub gists for a specified username.
   Each time it is run, it will notify to the console the URLs of 'new' gists.
@@ -8,33 +8,34 @@ Overview:
   it 'new', i.e. it will notify upon updates and deletions of gists, as well as
   previously unseen gists.
 
-Requirements:
+## Requirements:
 
   Ruby >= 2.0, which includes ALL currently supported versions.
   The script has been deliberately written to use ruby built-ins only; no extra
   gems are required.
 
   Tested successfully against specific versions:
-  2.0.0-p648
-  2.1.10
-  2.2.10
-  2.3.8
-  2.4.5
-  2.5.3
-  2.6.1
+ * 2.0.0-p648
+ * 2.1.10
+ * 2.2.10
+ * 2.3.8
+ * 2.4.5
+ * 2.5.3
+ * 2.6.1
 
 
-Example usage:
+## Example usage:
 
   __$ ruby lists_gists.rb  -h__
 
   Show help text
 
+```
  Usage: lists_gists.rb [options]
     -h, --help                       Show this help message
     -v, --verbose                    Run verbosely
     -u, --username=NAME              username to poll for public gists
-
+```
 
   __$ ruby lists_gists.rb__
 
@@ -52,7 +53,7 @@ Example usage:
 
 
 
-Change history
+## Change history
 
   v0.1.2 - use full gist URL instead of just hash. Address rubocop violations.
 
