@@ -55,6 +55,8 @@
 
 ## Change history
 
+  v0.1.3 - Tested with all rubies >= 2.0. Added frozen frozen_string_literal directive
+
   v0.1.2 - use full gist URL instead of just hash. Address rubocop violations.
 
   v0.1.1 - add command line switch for specifying users
