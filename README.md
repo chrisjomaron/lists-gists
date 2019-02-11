@@ -62,3 +62,10 @@
   v0.1.1 - add command line switch for specifying users
 
   v0.0.1 - initial version.
+
+
+## TODO
+
+  Modularise the Ruby script into a more OO codebase
+
+  Implement Test::Unit or rpsec tests against the above refactor
