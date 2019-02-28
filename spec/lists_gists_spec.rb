@@ -2,7 +2,7 @@
 
 require 'rspec'
 
-require_relative '../lists_gists.rb'
+require_relative '../lib/lists_gists.rb'
 
 describe ListsGists do
   before do
